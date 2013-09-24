@@ -1,0 +1,120 @@
+upstream api_unicorn {
+   server unix:/mnt/app/tasks.api/shared/sockets/.unicorn.sock fail_timeout=0;
+}
+upstream staging_api_unicorn {
+   server unix:/mnt/app/staging.tasks.api/shared/sockets/.unicorn.sock fail_timeout=0;
+}
+
+server {
+ listen 80;
+ server_name api.laosta.com;
+ root /mnt/app/tasks.api/current/public;
+ try_files $uri/index.html $uri @api_unicorn;
+ location @api_unicorn {
+   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+   proxy_set_header Host $http_host;
+   proxy_redirect off;
+   proxy_pass http://api_unicorn;
+ }
+ error_page 500 502 503 504 /500.html;
+}
+
+server {
+ listen 80;
+ server_name stage-api.laosta.com;
+ root /mnt/app/staging.tasks.api/current/public;
+ try_files $uri/index.html $uri @staging_api_unicorn;
+ location @staging_api_unicorn {
+   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+   proxy_set_header Host $http_host;
+   proxy_redirect off;
+   proxy_pass http://staging_api_unicorn;
+ }
+ error_page 500 502 503 504 /500.html;
+}
+
+server {
+  auth_basic "Restricted State";
+  auth_basic_user_file /etc/nginx/sites-enabled/.htpasswd;
+
+  listen 80;
+  listen 443 default ssl;
+  server_name app.laosta.com stage-app.laosta.com;
+  root /mnt/app/tasks.mobile/current/build/web;
+  # set far-future expiration headers on static content
+  expires max;
+
+  server_tokens off;
+
+  # ssl                  on;
+  # ssl_certificate      /mnt/app/tasks.mobile/certificate/production.crt;
+  # ssl_certificate_key  /mnt/app/tasks.mobile/certificate/production.key;
+
+  ssl_session_timeout  5m;
+
+  ssl_protocols  SSLv2 SSLv3 TLSv1;
+  ssl_ciphers  HIGH:!aNULL:!MD5;
+  ssl_prefer_server_ciphers   on;
+
+  error_page 500 502 503 504 /500.html;
+}
+
+server {
+  auth_basic "Restricted State";
+  auth_basic_user_file /etc/nginx/sites-enabled/.htpasswd;
+
+  listen 80;
+  server_name laosta.com www.laosta.com;
+  root /mnt/app/tasks.homepage/current;
+  # set far-future expiration headers on static content
+  expires max;
+
+  server_tokens off;
+
+  ssl_session_timeout  5m;
+
+  ssl_protocols  SSLv2 SSLv3 TLSv1;
+  ssl_ciphers  HIGH:!aNULL:!MD5;
+  ssl_prefer_server_ciphers   on;
+
+  error_page 500 502 503 504 /500.html;
+}
+
+# server {
+  # listen 80;
+  # listen 443 default ssl;
+  # server_name <%= node[:server_name] %>;
+  # root /mnt/app/tasks.mobile/current/public;
+  # set far-future expiration headers on static content
+  # expires max;
+
+  # server_tokens off;
+
+  # ssl                  on;
+  # ssl_certificate      <%= "/mnt/app/tasks.mobile/certificate/#{node[:environment]}.crt" %>;
+  # ssl_certificate_key  <%= "/mnt/app/tasks.mobile/certificate/#{node[:environment]}.key" %>;
+
+  # ssl_session_timeout  5m;
+
+  # ssl_protocols  SSLv2 SSLv3 TLSv1;
+  # ssl_ciphers  HIGH:!aNULL:!MD5;
+  # ssl_prefer_server_ciphers   on;
+
+  # set up the rails servers as a virtual location for use later
+  # location @unicorn {
+    # proxy_set_header Host $host;
+    # proxy_set_header X-Real-IP  $remote_addr;
+    # proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    # proxy_set_header X-Forwarded-Proto $scheme;
+    # proxy_intercept_errors on;
+    # proxy_redirect off;
+    # proxy_pass http://unicorn;
+    # expires off;
+  # }
+
+  # location / {
+    # try_files $uri @unicorn;
+  # }
+
+  # error_page 500 502 503 504 /500.html;
+# }

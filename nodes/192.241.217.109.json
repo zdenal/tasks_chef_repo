@@ -1,0 +1,34 @@
+{
+  "user": {
+    "name": "deployer",
+    "password": "<< openssl passwd -1 'theplaintextpassword' >>"
+  },
+  "mysql": {
+    "server_root_password": "<< mysql passwd >>",
+    "server_repl_password": "<< mysql passwd >>",
+    "server_debian_password": "<< sudoer passwd >>"
+  },
+  "rvm": {
+    "group_users": ["deployer"],
+    "global_gems": [
+      {"name": "bundler"}
+     ],
+    "default_ruby": "ruby-1.9.3-p448"
+  },
+  "environment": "production",
+  "server_name": "<< server-name.com >>",
+  "deploy_to": "/mnt/app",
+  "run_list": [
+    "recipe[vim]",
+    "recipe[libqt4]",
+    "recipe[imagemagick]",
+    "recipe[redis::source]",
+    "recipe[memcached]",
+    "recipe[nodejs]",
+    "recipe[rvm::system]",
+    "recipe[nginx]",
+    "recipe[mysql::server]",
+    "recipe[mysql::client]",
+    "recipe[main]"
+  ]
+}
