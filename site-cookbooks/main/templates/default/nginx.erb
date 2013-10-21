@@ -4,6 +4,9 @@ upstream api_unicorn {
 upstream staging_api_unicorn {
    server unix:/mnt/app/staging.tasks.api/shared/sockets/.unicorn.sock fail_timeout=0;
 }
+upstream admin_unicorn {
+   server unix:/mnt/app/tasks.admin/shared/sockets/.unicorn.sock fail_timeout=0;
+}
 
 server {
  listen 80;
@@ -29,6 +32,20 @@ server {
    proxy_set_header Host $http_host;
    proxy_redirect off;
    proxy_pass http://staging_api_unicorn;
+ }
+ error_page 500 502 503 504 /500.html;
+}
+
+server {
+ listen 80;
+ server_name admin.laosta.com;
+ root /mnt/app/tasks.admin/current/public;
+ try_files $uri/index.html $uri @admin_unicorn;
+ location @admin_unicorn {
+   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+   proxy_set_header Host $http_host;
+   proxy_redirect off;
+   proxy_pass http://admin_unicorn;
  }
  error_page 500 502 503 504 /500.html;
 }
